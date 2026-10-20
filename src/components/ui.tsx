@@ -205,13 +205,30 @@ export function AddressChip({ value, label }: { value: string; label?: string })
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
-    } catch {
-      // Clipboard access can be withheld or unavailable in non-secure origins.
-      setCopied(false);
-    }
+      const timeoutRef = useRef<
+        NodeJS.Timeout |
+        undefined
+      >(undefined);
+      async function copy(): Promise<void> {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopied(true);
+          timeoutRef.current = setTimeout(() => {
+            setCopied(false);
+          }, 2000);
+        } catch {
+          // Clipboard access can be withheld or unavailable in non-secure origins.
+          setCopied(false);
+        }
+      }
+      useEffect(() => {
+        return () => {
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+          }
+        };
+      }, [])
+    } catch {}
   }
 
   return (
